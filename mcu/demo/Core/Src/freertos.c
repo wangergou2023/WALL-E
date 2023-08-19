@@ -62,6 +62,7 @@ void StartDefaultTask(void const * argument);
 void StartTaskMotor(void const * argument);
 void StartTaskEncoder(void const * argument);
 
+extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
@@ -138,6 +139,8 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
+  /* init code for USB_DEVICE */
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   for(;;)
@@ -159,9 +162,17 @@ void StartDefaultTask(void const * argument)
 void StartTaskMotor(void const * argument)
 {
   /* USER CODE BEGIN StartTaskMotor */
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); // 启动通道1的PWM
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2); // 启动通道2的PWM
+  // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 900 - 1);
+  // __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 900 - 1);
   /* Infinite loop */
   for(;;)
   {
+    HAL_GPIO_WritePin(Motor1Dir1_GPIO_Port, Motor1Dir1_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(Motor1Dir2_GPIO_Port, Motor1Dir2_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(Motor2Dir1_GPIO_Port, Motor2Dir1_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(Motor2Dir2_GPIO_Port, Motor2Dir2_Pin, GPIO_PIN_RESET);
     osDelay(1);
   }
   /* USER CODE END StartTaskMotor */
@@ -183,12 +194,12 @@ void StartTaskEncoder(void const * argument)
   for(;;)
   {
     int Direction = __HAL_TIM_IS_TIM_COUNTING_DOWN(&htim2);   // 读取电机转动方向
-    int CaptureNumber = (short)__HAL_TIM_GET_COUNTER(&htim2); // 读取编码�?
+    int CaptureNumber = (short)__HAL_TIM_GET_COUNTER(&htim2); // 读取编码�??
     __HAL_TIM_GET_COUNTER(&htim2) = 0;                        // 计数器重新置0
     printf("Direction1 is %d \r\n", Direction);
     printf("CaptureNumber1 is %d \r\n", CaptureNumber);
     int Direction2 = __HAL_TIM_IS_TIM_COUNTING_DOWN(&htim3);   // 读取电机转动方向
-    int CaptureNumber2 = (short)__HAL_TIM_GET_COUNTER(&htim3); // 读取编码�?
+    int CaptureNumber2 = (short)__HAL_TIM_GET_COUNTER(&htim3); // 读取编码�??
     __HAL_TIM_GET_COUNTER(&htim3) = 0;                        // 计数器重新置0
     printf("Direction2 is %d \r\n", Direction2);
     printf("CaptureNumber2 is %d \r\n", CaptureNumber2);
