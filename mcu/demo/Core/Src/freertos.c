@@ -25,7 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
+#include "tim.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +49,9 @@
 
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
+osThreadId myTaskMotorHandle;
+osThreadId myTaskEncoderHandle;
+osMutexId myMutexPrintfHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -55,6 +59,8 @@ osThreadId defaultTaskHandle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
+void StartTaskMotor(void const * argument);
+void StartTaskEncoder(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -83,6 +89,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
+  /* Create the mutex(es) */
+  /* definition and creation of myMutexPrintf */
+  osMutexDef(myMutexPrintf);
+  myMutexPrintfHandle = osMutexCreate(osMutex(myMutexPrintf));
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -105,6 +115,14 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
+  /* definition and creation of myTaskMotor */
+  osThreadDef(myTaskMotor, StartTaskMotor, osPriorityIdle, 0, 128);
+  myTaskMotorHandle = osThreadCreate(osThread(myTaskMotor), NULL);
+
+  /* definition and creation of myTaskEncoder */
+  osThreadDef(myTaskEncoder, StartTaskEncoder, osPriorityIdle, 0, 128);
+  myTaskEncoderHandle = osThreadCreate(osThread(myTaskEncoder), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -125,9 +143,58 @@ void StartDefaultTask(void const * argument)
   for(;;)
   {
     HAL_GPIO_TogglePin(Led_GPIO_Port, Led_Pin);
-    osDelay(100);
+    printf("hello\r\n");
+    osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
+}
+
+/* USER CODE BEGIN Header_StartTaskMotor */
+/**
+* @brief Function implementing the myTaskMotor thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskMotor */
+void StartTaskMotor(void const * argument)
+{
+  /* USER CODE BEGIN StartTaskMotor */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartTaskMotor */
+}
+
+/* USER CODE BEGIN Header_StartTaskEncoder */
+/**
+* @brief Function implementing the myTaskEncoder thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskEncoder */
+void StartTaskEncoder(void const * argument)
+{
+  /* USER CODE BEGIN StartTaskEncoder */
+  HAL_TIM_Encoder_Start(&htim2,TIM_CHANNEL_1 | TIM_CHANNEL_2);
+  HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_1 | TIM_CHANNEL_2);
+  /* Infinite loop */
+  for(;;)
+  {
+    int Direction = __HAL_TIM_IS_TIM_COUNTING_DOWN(&htim2);   // 读取电机转动方向
+    int CaptureNumber = (short)__HAL_TIM_GET_COUNTER(&htim2); // 读取编码�?
+    __HAL_TIM_GET_COUNTER(&htim2) = 0;                        // 计数器重新置0
+    printf("Direction1 is %d \r\n", Direction);
+    printf("CaptureNumber1 is %d \r\n", CaptureNumber);
+    int Direction2 = __HAL_TIM_IS_TIM_COUNTING_DOWN(&htim3);   // 读取电机转动方向
+    int CaptureNumber2 = (short)__HAL_TIM_GET_COUNTER(&htim3); // 读取编码�?
+    __HAL_TIM_GET_COUNTER(&htim3) = 0;                        // 计数器重新置0
+    printf("Direction2 is %d \r\n", Direction2);
+    printf("CaptureNumber2 is %d \r\n", CaptureNumber2);
+    HAL_Delay(500);
+  }
+  /* USER CODE END StartTaskEncoder */
 }
 
 /* Private application code --------------------------------------------------*/
