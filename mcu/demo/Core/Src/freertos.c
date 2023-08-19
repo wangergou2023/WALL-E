@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
 #include "tim.h"
+#include "mpu6050.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,6 +52,7 @@
 osThreadId defaultTaskHandle;
 osThreadId myTaskMotorHandle;
 osThreadId myTaskEncoderHandle;
+osThreadId myTaskAttitudeHandle;
 osMutexId myMutexPrintfHandle;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,6 +63,7 @@ osMutexId myMutexPrintfHandle;
 void StartDefaultTask(void const * argument);
 void StartTaskMotor(void const * argument);
 void StartTaskEncoder(void const * argument);
+void StartTaskAttitude(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -124,6 +127,10 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(myTaskEncoder, StartTaskEncoder, osPriorityIdle, 0, 128);
   myTaskEncoderHandle = osThreadCreate(osThread(myTaskEncoder), NULL);
 
+  /* definition and creation of myTaskAttitude */
+  osThreadDef(myTaskAttitude, StartTaskAttitude, osPriorityIdle, 0, 256);
+  myTaskAttitudeHandle = osThreadCreate(osThread(myTaskAttitude), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -173,7 +180,7 @@ void StartTaskMotor(void const * argument)
     HAL_GPIO_WritePin(Motor1Dir2_GPIO_Port, Motor1Dir2_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(Motor2Dir1_GPIO_Port, Motor2Dir1_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(Motor2Dir2_GPIO_Port, Motor2Dir2_Pin, GPIO_PIN_RESET);
-    osDelay(1);
+    osDelay(1000);
   }
   /* USER CODE END StartTaskMotor */
 }
@@ -193,19 +200,42 @@ void StartTaskEncoder(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    int Direction = __HAL_TIM_IS_TIM_COUNTING_DOWN(&htim2);   // 读取电机转动方向
-    int CaptureNumber = (short)__HAL_TIM_GET_COUNTER(&htim2); // 读取编码�??
-    __HAL_TIM_GET_COUNTER(&htim2) = 0;                        // 计数器重新置0
+    int Direction = __HAL_TIM_IS_TIM_COUNTING_DOWN(&htim2);
+    int CaptureNumber = (short)__HAL_TIM_GET_COUNTER(&htim2);
+    __HAL_TIM_GET_COUNTER(&htim2) = 0;
     printf("Direction1 is %d \r\n", Direction);
     printf("CaptureNumber1 is %d \r\n", CaptureNumber);
-    int Direction2 = __HAL_TIM_IS_TIM_COUNTING_DOWN(&htim3);   // 读取电机转动方向
-    int CaptureNumber2 = (short)__HAL_TIM_GET_COUNTER(&htim3); // 读取编码�??
-    __HAL_TIM_GET_COUNTER(&htim3) = 0;                        // 计数器重新置0
+    int Direction2 = __HAL_TIM_IS_TIM_COUNTING_DOWN(&htim3);
+    int CaptureNumber2 = (short)__HAL_TIM_GET_COUNTER(&htim3);
+    __HAL_TIM_GET_COUNTER(&htim3) = 0;
     printf("Direction2 is %d \r\n", Direction2);
     printf("CaptureNumber2 is %d \r\n", CaptureNumber2);
-    HAL_Delay(500);
+    HAL_Delay(1000);
   }
   /* USER CODE END StartTaskEncoder */
+}
+
+/* USER CODE BEGIN Header_StartTaskAttitude */
+/**
+* @brief Function implementing the myTaskAttitude thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskAttitude */
+void StartTaskAttitude(void const * argument)
+{
+  /* USER CODE BEGIN StartTaskAttitude */
+  MPU6050_t MPU6050;
+  while (MPU6050_Init(&hi2c1) == 1);
+  /* Infinite loop */
+  for(;;)
+  {
+    MPU6050_Read_All(&hi2c1, &MPU6050);
+    printf("KalmanAngleX %f \r\n",MPU6050.KalmanAngleX);
+    printf("KalmanAngleY %f \r\n",MPU6050.KalmanAngleY);
+    osDelay(1000);
+  }
+  /* USER CODE END StartTaskAttitude */
 }
 
 /* Private application code --------------------------------------------------*/
