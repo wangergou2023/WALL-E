@@ -5,6 +5,7 @@
         "tim.h": "c",
         "cmsis_os.h": "c",
         "usart.h": "c",
-        "main.h": "c"
+        "main.h": "c",
+        "vl6180x_simple_ranging.h": "c"
     }
 }

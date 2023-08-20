@@ -28,6 +28,7 @@
 #include "stdio.h"
 #include "tim.h"
 #include "mpu6050.h"
+#include "vl6180x_api.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,6 +54,7 @@ osThreadId defaultTaskHandle;
 osThreadId myTaskMotorHandle;
 osThreadId myTaskEncoderHandle;
 osThreadId myTaskAttitudeHandle;
+osThreadId myTaskDistanceHandle;
 osMutexId myMutexPrintfHandle;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,6 +66,7 @@ void StartDefaultTask(void const * argument);
 void StartTaskMotor(void const * argument);
 void StartTaskEncoder(void const * argument);
 void StartTaskAttitude(void const * argument);
+void StartTaskDistance(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -128,8 +131,12 @@ void MX_FREERTOS_Init(void) {
   myTaskEncoderHandle = osThreadCreate(osThread(myTaskEncoder), NULL);
 
   /* definition and creation of myTaskAttitude */
-  osThreadDef(myTaskAttitude, StartTaskAttitude, osPriorityIdle, 0, 256);
+  osThreadDef(myTaskAttitude, StartTaskAttitude, osPriorityIdle, 0, 128);
   myTaskAttitudeHandle = osThreadCreate(osThread(myTaskAttitude), NULL);
+
+  /* definition and creation of myTaskDistance */
+  osThreadDef(myTaskDistance, StartTaskDistance, osPriorityIdle, 0, 128);
+  myTaskDistanceHandle = osThreadCreate(osThread(myTaskDistance), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -236,6 +243,34 @@ void StartTaskAttitude(void const * argument)
     osDelay(1000);
   }
   /* USER CODE END StartTaskAttitude */
+}
+
+/* USER CODE BEGIN Header_StartTaskDistance */
+/**
+* @brief Function implementing the myTaskDistance thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskDistance */
+void StartTaskDistance(void const * argument)
+{
+  /* USER CODE BEGIN StartTaskDistance */
+	VL6180xDev_t myDev = 0x52;
+	VL6180x_RangeData_t Range;
+
+	VL6180x_InitData(myDev);
+	VL6180x_Prepare(myDev);
+  /* Infinite loop */
+  for(;;)
+  {
+    VL6180x_RangePollMeasurement(myDev, &Range);
+    if (Range.errorStatus == 0)
+      printf("range in mm:%ld \r\n", Range.range_mm);
+    else
+      printf("error code:%ld \r\n", Range.errorStatus);
+    osDelay(1000);
+  }
+  /* USER CODE END StartTaskDistance */
 }
 
 /* Private application code --------------------------------------------------*/
