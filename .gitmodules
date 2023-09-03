@@ -1,3 +1,9 @@
 [submodule "soc/uboot/src"]
 	path = soc/uboot/src
 	url = https://github.com/wangergou2023/uboot_rk3568.git
+[submodule "soc/uboot/rkbin"]
+	path = soc/uboot/rkbin
+	url = https://github.com/wangergou2023/rkbin_rk3568.git
+[submodule "soc/kernel/src"]
+	path = soc/kernel/src
+	url = https://github.com/wangergou2023/kernel_rk3568.git
