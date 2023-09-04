@@ -7,3 +7,6 @@
 [submodule "soc/kernel/src"]
 	path = soc/kernel/src
 	url = https://github.com/wangergou2023/kernel_rk3568.git
+[submodule "soc/rootfs/ubuntu"]
+	path = soc/rootfs/ubuntu
+	url = https://github.com/wangergou2023/ubuntu_rootfs_rk3568.git
